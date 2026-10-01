@@ -1,0 +1,25 @@
+    <section class="space-y-5">
+      <div class="td-page-hero">
+        <p class="td-label">Présences</p>
+        <h2 class="td-page-title">Pointage réunion</h2>
+        <p class="td-page-subtitle">Enregistrez les arrivées, retards et absences avec calcul des pénalités.</p>
+      </div>
+
+      <form class="td-card grid gap-4 p-5 md:grid-cols-2" [formGroup]="form" (ngSubmit)="checkIn()">
+        <label><span class="td-label">Réunion ID</span><input class="td-input mt-1" formControlName="meetingId"></label>
+        <label><span class="td-label">Membre ID</span><input class="td-input mt-1" formControlName="memberId"></label>
+        <label><span class="td-label">Heure d'arrivée</span><input class="td-input mt-1" type="datetime-local" formControlName="arrivalAt"></label>
+        <div class="flex items-end gap-2">
+          <button class="td-button-violet" type="submit" [disabled]="form.invalid">Enregistrer arrivée</button>
+          <button class="td-button-secondary" type="button" (click)="absence(false)">Absence non autorisée</button>
+          <button class="td-button-secondary" type="button" (click)="absence(true)">Absence autorisée</button>
+        </div>
+      </form>
+
+      @if (result(); as result) {
+        <article class="td-card p-5">
+          <p class="td-label">Résultat</p>
+          <pre class="mt-3 overflow-auto rounded-md bg-stone-950 p-4 text-xs text-stone-50">{{ result }}</pre>
+        </article>
+      }
+    </section>

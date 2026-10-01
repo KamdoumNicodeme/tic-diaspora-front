@@ -1,0 +1,46 @@
+    <section class="space-y-5">
+      <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="td-label">Annuaire</p>
+          <h2 class="td-page-title">Membres</h2>
+          <p class="td-page-subtitle">Gestion des profils, rôles, statuts, cotisations et animations.</p>
+        </div>
+        <a routerLink="/members/new" class="td-button-violet">Nouveau membre</a>
+      </div>
+
+      <div class="td-card overflow-x-auto">
+        <table class="td-table min-w-[880px] ">
+          <thead class="td-table-head">
+            <tr>
+              <th class="px-4 py-3">Nom</th>
+              <th class="px-4 py-3">Contact</th>
+              <th class="px-4 py-3">Statut</th>
+              <th class="px-4 py-3">Rôle</th>
+              <th class="px-4 py-3">Cotisation</th>
+              <th class="px-4 py-3">Animations</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="td-table-body">
+            @for (member of members(); track member.id) {
+              <tr class="td-table-row">
+                <td class="px-4 py-3 font-semibold">{{ member.firstName }} {{ member.lastName }}</td>
+                <td class="px-4 py-3">
+                  <p>{{ member.email }}</p>
+                  <p class="text-xs td-muted">{{ member.city || '-' }}, {{ member.country || '-' }}</p>
+                </td>
+                <td class="px-4 py-3"><span class="td-pill">{{ member.status }}</span></td>
+                <td class="px-4 py-3">{{ member.role }}</td>
+                <td class="px-4 py-3">{{ member.contributionType }}</td>
+                <td class="px-4 py-3">{{ member.totalMeetingsChaired }}</td>
+                <td class="px-4 py-3 text-right">
+                  <a [routerLink]="['/members', member.id]" class="td-button-secondary">Ouvrir</a>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="px-4 py-8 text-center td-muted">Aucun membre.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>

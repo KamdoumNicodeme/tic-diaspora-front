@@ -1,0 +1,14 @@
+    <section class="space-y-5">
+      <div class="td-page-hero">
+        <p class="td-label">Rapports</p>
+        <h2 class="td-page-title">Rapport annuel</h2>
+        <p class="td-page-subtitle">Synthèse annuelle des activités, cotisations, pénalités et mouvements de caisse.</p>
+      </div>
+      <div class="td-card flex flex-wrap items-end gap-3 p-5">
+        <label><span class="td-label">Année</span><input class="td-input mt-1 w-40" type="number" [(ngModel)]="year"></label>
+        <button class="td-button-violet" type="button" (click)="load()">Générer</button>
+      </div>
+      @if (report(); as report) {
+        <pre class="td-card overflow-auto p-5 text-sm">{{ report }}</pre>
+      }
+    </section>

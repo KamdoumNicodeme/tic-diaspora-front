@@ -1,0 +1,224 @@
+<section class="space-y-5">
+  <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="td-label">Sanctions</p>
+      <h2 class="td-page-title">Pénalités</h2>
+      <p class="td-page-subtitle">Suivez les retards, absences non autorisées, paiements et annulations exceptionnelles.</p>
+    </div>
+    @if (auth.isPresident()) {
+      <span class="td-pill">Gestion président</span>
+    } @else {
+      <span class="td-pill">Mes pénalités</span>
+    }
+  </div>
+
+  @if (auth.isPresident()) {
+    <div class="grid gap-3 md:grid-cols-4">
+      <article class="td-stat-orange">
+        <p class="td-label text-stone-700 dark:text-amber-100">À payer</p>
+        <p class="mt-2 text-3xl font-black">{{ money(summary().pendingAmount) }}</p>
+        <p class="mt-1 text-sm font-bold">{{ summary().pendingCount }} pénalité(s)</p>
+      </article>
+      <article class="td-stat-mint">
+        <p class="td-label text-mint dark:text-emerald-200">Payées</p>
+        <p class="mt-2 text-3xl font-black">{{ money(summary().paidAmount) }}</p>
+        <p class="mt-1 text-sm font-bold">versées à la caisse</p>
+      </article>
+      <article class="td-stat-violet">
+        <p class="td-label text-plum dark:text-violet-200">Annulées</p>
+        <p class="mt-2 text-3xl font-black">{{ summary().waivedCount }}</p>
+        <p class="mt-1 text-sm font-bold">{{ money(summary().waivedAmount) }}</p>
+      </article>
+      <article class="rounded-lg bg-coral/10 p-4 text-coral dark:bg-red-300/10 dark:text-red-100">
+        <p class="td-label text-coral dark:text-red-100">Total dossiers</p>
+        <p class="mt-2 text-3xl font-black">{{ summary().totalCount }}</p>
+        <p class="mt-1 text-sm font-bold">{{ summary().cancelledCount }} supprimée(s)</p>
+      </article>
+    </div>
+
+    <form class="td-card grid gap-4 p-5 lg:grid-cols-4" [formGroup]="form" (ngSubmit)="create()">
+      <div class="lg:col-span-4">
+        <p class="td-label">Nouvelle pénalité</p>
+        <h3 class="td-section-title">Appliquer une pénalité</h3>
+      </div>
+
+      <label>
+        <span class="td-label">Membre</span>
+        <select class="td-input mt-1" formControlName="memberId">
+          <option value="">Choisir un membre</option>
+          @for (member of members(); track member.id) {
+            <option [value]="member.id">{{ member.firstName }} {{ member.lastName }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span class="td-label">Réunion</span>
+        <select class="td-input mt-1" formControlName="meetingId">
+          <option value="">Hors réunion</option>
+          @for (meeting of meetings(); track meeting.id) {
+            <option [value]="meeting.id">{{ meeting.title }} - {{ meeting.meetingDate }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span class="td-label">Type</span>
+        <select class="td-input mt-1" formControlName="type" (change)="selectType()">
+          @for (type of types; track type) {
+            <option [value]="type">{{ typeLabel(type) }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span class="td-label">Montant</span>
+        <input class="td-input mt-1" type="number" formControlName="amount">
+      </label>
+
+      <label class="lg:col-span-4">
+        <span class="td-label">Motif</span>
+        <input class="td-input mt-1" formControlName="reason" placeholder="Ex: Absence non autorisée sans demande validée">
+      </label>
+
+      @if (message()) {
+        <p class="rounded-md bg-mint/10 p-3 text-sm font-semibold text-mint lg:col-span-3">{{ message() }}</p>
+      }
+      @if (error()) {
+        <p class="rounded-md bg-coral/10 p-3 text-sm font-semibold text-coral lg:col-span-3">{{ error() }}</p>
+      }
+
+      <div class="lg:col-span-4 flex justify-end">
+        <button class="td-button-orange" type="submit" [disabled]="form.invalid">Créer pénalité</button>
+      </div>
+    </form>
+  }
+
+  @if (selectedWaive(); as penalty) {
+    <form class="td-card grid gap-3 p-5 md:grid-cols-[1fr_auto]" [formGroup]="waiveForm" (ngSubmit)="waive()">
+      <div>
+        <p class="td-label">Annulation exceptionnelle</p>
+        <h3 class="td-section-title">{{ penalty.memberFullName || 'Membre' }} - {{ typeLabel(penalty.type) }}</h3>
+      </div>
+      <button type="button" class="td-button-secondary" (click)="selectedWaive.set(null)">Fermer</button>
+      <label class="md:col-span-2">
+        <span class="td-label">Justification obligatoire</span>
+        <textarea class="td-input mt-1 min-h-20" formControlName="reason" placeholder="Expliquez précisément pourquoi la pénalité est annulée."></textarea>
+      </label>
+      <div class="md:col-span-2 flex justify-end">
+        <button class="td-button-violet" type="submit" [disabled]="waiveForm.invalid">Annuler la pénalité</button>
+      </div>
+    </form>
+  }
+
+  @if (auth.isPresident()) {
+    <div class="td-card flex flex-wrap items-center gap-2 p-4">
+      <button type="button" class="td-button-secondary" [class.td-button-violet]="statusFilter() === ''" (click)="filter('')">Toutes</button>
+      @for (status of statuses; track status) {
+        <button type="button" class="td-button-secondary" [class.td-button-violet]="statusFilter() === status" (click)="filter(status)">
+          {{ statusLabel(status) }}
+        </button>
+      }
+    </div>
+  }
+
+  <div class="td-card overflow-x-auto">
+    <table class="td-table min-w-[1180px]">
+      <thead class="td-table-head">
+        <tr>
+          <th class="px-4 py-3">Membre</th>
+          <th class="px-4 py-3">Réunion</th>
+          <th class="px-4 py-3">Type</th>
+          <th class="px-4 py-3">Montant</th>
+          <th class="px-4 py-3">Statut</th>
+          <th class="px-4 py-3">Motif</th>
+          <th class="px-4 py-3">Créée le</th>
+          <th class="px-4 py-3">Validation</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="td-table-body">
+        @for (penalty of penalties(); track penalty.id) {
+          <tr class="td-table-row">
+            <td class="px-4 py-3 font-bold text-ink dark:text-white">{{ penalty.memberFullName || 'Moi' }}</td>
+            <td class="px-4 py-3">{{ penalty.meetingTitle || '-' }}</td>
+            <td class="px-4 py-3">{{ typeLabel(penalty.type) }}</td>
+            <td class="px-4 py-3 font-black">{{ money(penalty.amount) }}</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-black" [class]="statusClass(penalty.status)">
+                {{ statusLabel(penalty.status) }}
+              </span>
+            </td>
+            <td class="max-w-sm px-4 py-3">
+              <p>{{ penalty.reason }}</p>
+              @if (penalty.cancellationReason) {
+                <p class="mt-1 text-xs font-semibold text-plum dark:text-violet-200">Annulation : {{ penalty.cancellationReason }}</p>
+              }
+            </td>
+            <td class="px-4 py-3">{{ formatDate(penalty.createdAt) }}</td>
+            <td class="px-4 py-3">
+              @if (penalty.paidAt) {
+                <p>{{ formatDate(penalty.paidAt) }}</p>
+                <p class="text-xs td-muted">{{ penalty.validatedByFullName || '-' }}</p>
+              } @else {
+                <span class="td-muted">-</span>
+              }
+            </td>
+            <td class="px-4 py-3 text-right">
+              @if (auth.isPresident() && penalty.status === 'PENDING') {
+                <div class="flex justify-end gap-2">
+                  <button class="td-button-primary" type="button" (click)="pay(penalty)">Payer</button>
+                  <button class="td-button-secondary" type="button" (click)="openWaive(penalty)">Annuler</button>
+                </div>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="9" class="px-4 py-8 text-center td-muted">Aucune pénalité.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (auth.isPresident()) {
+    <div class="grid gap-4 lg:grid-cols-2">
+      <article class="td-card p-5">
+        <p class="td-label">À encaisser</p>
+        <h3 class="td-section-title">Pénalités en attente</h3>
+        <div class="mt-4 space-y-3">
+          @for (penalty of pendingPenalties(); track penalty.id) {
+            <div class="td-panel flex items-center justify-between gap-3 p-3">
+              <div>
+                <p class="font-black text-ink dark:text-white">{{ penalty.memberFullName }}</p>
+                <p class="text-sm td-muted">{{ typeLabel(penalty.type) }}</p>
+              </div>
+              <span class="font-black text-saffron">{{ money(penalty.amount) }}</span>
+            </div>
+          } @empty {
+            <p class="td-panel p-4 text-sm td-muted">Aucune pénalité en attente.</p>
+          }
+        </div>
+      </article>
+
+      <article class="td-card p-5">
+        <p class="td-label">Caisse caritative</p>
+        <h3 class="td-section-title">Pénalités déjà payées</h3>
+        <div class="mt-4 space-y-3">
+          @for (penalty of paidPenalties(); track penalty.id) {
+            <div class="td-panel flex items-center justify-between gap-3 p-3">
+              <div>
+                <p class="font-black text-ink dark:text-white">{{ penalty.memberFullName }}</p>
+                <p class="text-sm td-muted">{{ formatDate(penalty.paidAt) }}</p>
+              </div>
+              <span class="font-black text-mint">{{ money(penalty.amount) }}</span>
+            </div>
+          } @empty {
+            <p class="td-panel p-4 text-sm td-muted">Aucune pénalité payée dans ce filtre.</p>
+          }
+        </div>
+      </article>
+    </div>
+  }
+</section>

@@ -1,0 +1,154 @@
+<section class="space-y-5">
+  <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="td-label">Paiements</p>
+      <h2 class="td-page-title">Cotisations</h2>
+      <p class="td-page-subtitle">Déclarez les paiements, ajoutez les preuves et suivez les validations du cycle courant.</p>
+    </div>
+    @if (!auth.isPresident()) {
+      <span class="td-pill">Déclaration membre</span>
+    }
+  </div>
+
+  <form class="td-card grid gap-4 p-5 md:grid-cols-3" [formGroup]="form" (ngSubmit)="pay()">
+    @if (auth.isPresident()) {
+      <label>
+        <span class="td-label">Cycle</span>
+        <select class="td-input mt-1" formControlName="cycleId" (change)="selectCycle()">
+          <option value="">Choisir un cycle</option>
+          @for (cycle of cycles(); track cycle.id) {
+            <option [value]="cycle.id">{{ cycle.month }}/{{ cycle.year }} - {{ cycleBeneficiaryLabel(cycle) }}</option>
+          }
+        </select>
+      </label>
+    } @else {
+      <div class="td-panel p-3">
+        <p class="td-label">Cycle de cotisation</p>
+        <p class="mt-1 font-black text-ink dark:text-white">
+          @if (selectedCycle(); as cycle) {
+            {{ cycle.month }}/{{ cycle.year }}
+          } @else {
+            Cycle {{ targetCycleLabel() }} introuvable
+          }
+        </p>
+      </div>
+    }
+
+    @if (auth.isPresident()) {
+      <label>
+        <span class="td-label">Membre</span>
+        <select class="td-input mt-1" formControlName="memberId">
+          <option value="">Choisir un membre</option>
+          @for (member of members(); track member.id) {
+            <option [value]="member.id">{{ member.firstName }} {{ member.lastName }}</option>
+          }
+        </select>
+      </label>
+    } @else {
+      <label>
+        <span class="td-label">Membre</span>
+        <input class="td-input mt-1 bg-stone-100 dark:bg-white/5" [value]="currentMemberName()" disabled>
+      </label>
+    }
+
+    <label>
+      <span class="td-label">Montant</span>
+      <input class="td-input mt-1" type="number" formControlName="amount">
+    </label>
+    <label>
+      <span class="td-label">Méthode</span>
+      <select class="td-input mt-1" formControlName="method">
+        <option value="CASH">Espèces</option>
+        <option value="BANK_TRANSFER">Virement bancaire</option>
+        <option value="MOBILE_MONEY">Mobile money</option>
+        <option value="OTHER">Autre</option>
+      </select>
+    </label>
+    <label>
+      <span class="td-label">Référence</span>
+      <input class="td-input mt-1" formControlName="transactionReference" placeholder="Transaction, reçu, note">
+    </label>
+    <label>
+      <span class="td-label">Preuve</span>
+      <input
+        class="mt-1 block w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-white/10 file:mr-3 file:rounded-md file:border-0 file:bg-mint file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-white"
+        type="file"
+        accept=".pdf,image/png,image/jpeg,image/webp"
+        (change)="selectProof($event)"
+      >
+    </label>
+    <div class="md:col-span-3 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-stone-500 dark:text-stone-400">
+        @if (selectedProof(); as proof) {
+          {{ proof.name }} sélectionné
+        } @else {
+          PDF, PNG, JPG ou WEBP accepté.
+        }
+      </p>
+      <button class="td-button-violet" type="submit" [disabled]="form.invalid">Enregistrer paiement</button>
+    </div>
+  </form>
+
+  @if (selectedCycle(); as cycle) {
+    <article class="td-card p-5">
+      <p class="td-label">Bénéficiaire(s) à payer</p>
+      <div class="mt-3 grid gap-3 md:grid-cols-2">
+        @for (recipient of beneficiaryRecipients(cycle); track recipient.name) {
+          <div class="rounded-md border border-stone-200 bg-stone-50 p-4 dark:border-white/10 dark:bg-white/5">
+            <h3 class="text-lg font-black text-ink dark:text-white">{{ recipient.name || 'Bénéficiaire à définir' }}</h3>
+            <div class="mt-3 grid gap-2 text-sm text-stone-600 dark:text-stone-300">
+              <p>Part à recevoir: <strong>{{ money(recipient.expectedAmount) }}</strong></p>
+              <p>{{ paymentProvider(recipient) }}: {{ paymentNumber(recipient) }}</p>
+              <p>Nom du compte: {{ paymentAccountName(recipient) }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </article>
+  }
+
+  <div class="td-card overflow-x-auto">
+    <table class="td-table min-w-[1120px] ">
+      <thead class="td-table-head">
+        <tr>
+          <th class="px-4 py-3">Membre</th>
+          <th class="px-4 py-3">Cycle</th>
+          <th class="px-4 py-3">Attendu</th>
+          <th class="px-4 py-3">Payé</th>
+          <th class="px-4 py-3">Reste</th>
+          <th class="px-4 py-3">Méthode</th>
+          <th class="px-4 py-3">Référence</th>
+          <th class="px-4 py-3">Preuve</th>
+          <th class="px-4 py-3">Statut</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="td-table-body">
+        @for (contribution of contributions(); track contribution.id) {
+          <tr>
+            <td class="px-4 py-3 font-semibold text-ink dark:text-white">{{ contribution.memberFullName || contribution.memberId }}</td>
+            <td class="px-4 py-3 text-stone-500 dark:text-stone-400">{{ cycleLabel(contribution.cycleId) }}</td>
+            <td class="px-4 py-3">{{ contribution.expectedAmount }} XAF</td>
+            <td class="px-4 py-3 font-bold text-mint">{{ contribution.paidAmount }} XAF</td>
+            <td class="px-4 py-3">{{ contribution.remainingAmount }} XAF</td>
+            <td class="px-4 py-3">{{ contribution.lastPaymentMethod || '-' }}</td>
+            <td class="px-4 py-3">{{ contribution.lastTransactionReference || '-' }}</td>
+            <td class="px-4 py-3">
+              @if (contribution.lastProofUrl) {
+                <button class="td-button-secondary" type="button" (click)="openProof(contribution.lastProofUrl)">Voir</button>
+              } @else {
+                <span class="text-stone-400">-</span>
+              }
+            </td>
+            <td class="px-4 py-3"><span class="td-pill">{{ contribution.status }}</span></td>
+            <td class="px-4 py-3 text-right">
+              @if (auth.isPresident()) {
+                <button class="td-button-secondary" type="button" (click)="validate(contribution.id)">Valider</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

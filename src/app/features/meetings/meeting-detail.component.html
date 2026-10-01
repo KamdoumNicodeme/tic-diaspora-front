@@ -1,0 +1,99 @@
+    @if (meeting(); as meeting) {
+      <section class="space-y-5">
+        <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <a routerLink="/meetings" class="td-soft-link px-0">Retour</a>
+            <h2 class="td-page-title">{{ meeting.title }}</h2>
+            <p class="td-page-subtitle">{{ meeting.meetingDate }} · {{ meeting.status }}</p>
+          </div>
+          @if (auth.isPresident()) {
+            <div class="flex gap-2">
+              <button class="td-button-secondary" type="button" (click)="start(meeting.id)">Démarrer</button>
+              <button class="td-button-violet" type="button" (click)="complete(meeting.id)">Clôturer</button>
+            </div>
+          }
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <article class="td-card p-5">
+            <p class="td-label">Président de séance</p>
+            <p class="mt-2 text-lg font-black text-plum dark:text-violet-200">{{ meeting.chairpersonFullName || 'à désigner' }}</p>
+          </article>
+          <article class="td-card p-5">
+            <p class="td-label">Bénéficiaire(s) du mois</p>
+            <div class="mt-3 grid gap-3">
+              @for (recipient of beneficiaryRecipients(meeting); track recipient.name) {
+                <div class="rounded-md bg-saffron/10 p-3 dark:bg-amber-300/10">
+                  <p class="text-lg font-black text-saffron dark:text-amber-200">{{ recipient.name || 'à définir' }}</p>
+                  @if (recipient.orangeMoneyNumber || recipient.mtnMoneyNumber) {
+                    <div class="mt-2 grid gap-1 text-sm text-stone-600 dark:text-stone-300">
+                      <p>Part à recevoir: <strong>{{ money(recipient.expectedAmount) }}</strong></p>
+                      <p>{{ paymentProvider(recipient) }}: {{ paymentNumber(recipient) }}</p>
+                      <p>Nom du compte: {{ paymentAccountName(recipient) }}</p>
+                    </div>
+                  }
+                </div>
+              }
+              </div>
+          </article>
+        </div>
+
+        @if (auth.isPresident()) {
+          <form class="td-card grid gap-4 p-5 md:grid-cols-2" [formGroup]="beneficiaryForm" (ngSubmit)="saveBeneficiary(meeting.id)">
+            <label>
+              <span class="td-label">Bénéficiaire principal</span>
+              <select class="td-input mt-1" formControlName="beneficiaryId" (change)="onPrimaryBeneficiaryChange()">
+                <option value="">Choisir un membre</option>
+                @for (member of members(); track member.id) {
+                  <option [value]="member.id">{{ member.firstName }} {{ member.lastName }} · {{ member.contributionType === 'XAF_50000' ? '50 000' : '100 000' }}</option>
+                }
+              </select>
+            </label>
+            @if (isPrimaryBeneficiary50000()) {
+              <label>
+                <span class="td-label">Autre bénéficiaire 50 000 obligatoire</span>
+                <select class="td-input mt-1" formControlName="secondaryBeneficiaryId">
+                  <option value="">Choisir un autre membre 50 000</option>
+                  @for (member of eligibleSecondaryBeneficiaries(); track member.id) {
+                    <option [value]="member.id">{{ member.firstName }} {{ member.lastName }}</option>
+                  }
+                </select>
+              </label>
+            } @else {
+              <div class="td-panel p-3">
+                <p class="td-label">Règle appliquée</p>
+                <p class="mt-1 text-sm font-semibold text-stone-700 dark:text-stone-200">Un bénéficiaire 100 000 bouffe seul.</p>
+              </div>
+            }
+            <div class="flex flex-wrap items-center justify-between gap-3 md:col-span-2">
+              <label class="flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-200">
+                <input class="h-4 w-4 rounded border-stone-300 text-plum" type="checkbox" formControlName="unanimousAgreement">
+                Accord unanime obtenu après discussion
+              </label>
+              <button class="td-button-violet" type="submit" [disabled]="beneficiaryForm.invalid">Enregistrer</button>
+            </div>
+          </form>
+        }
+
+        <form class="td-card grid gap-4 p-5" [formGroup]="form" (ngSubmit)="saveMinutes(meeting.id)">
+          <label>
+            <span class="td-label">Compte rendu</span>
+            <textarea class="td-input mt-1 min-h-36" formControlName="notes"></textarea>
+          </label>
+          <label>
+            <span class="td-label">Décisions prises</span>
+            <textarea class="td-input mt-1 min-h-24" formControlName="decisionsSummary"></textarea>
+          </label>
+          <label>
+            <span class="td-label">Projets discutés</span>
+            <textarea class="td-input mt-1 min-h-24" formControlName="projectsSummary"></textarea>
+          </label>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm font-semibold text-mint">{{ minutesSavedMessage() }}</p>
+            @if (auth.isPresident()) {
+              <button class="td-button-orange" type="submit">Enregistrer le compte rendu</button>
+            }
+          </div>
+        </form>
+      </section>
+    }

@@ -1,0 +1,141 @@
+<section class="space-y-5">
+  <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="td-label">Caisse séparée</p>
+      <h2 class="td-page-title">Caisse caritative</h2>
+      <p class="td-page-subtitle">Suivi des pénalités collectées, du solde disponible et des sorties justifiées pour les actions caritatives.</p>
+    </div>
+    <span class="td-pill">{{ summary().movementsCount }} mouvements</span>
+  </div>
+
+  <div class="grid gap-3 md:grid-cols-4">
+    <article class="td-stat-mint">
+      <p class="td-label text-mint dark:text-emerald-200">Solde disponible</p>
+      <p class="mt-2 text-3xl font-black">{{ money(summary().balance) }}</p>
+    </article>
+    <article class="td-stat-violet">
+      <p class="td-label text-plum dark:text-violet-200">Entrées totales</p>
+      <p class="mt-2 text-2xl font-black">{{ money(summary().totalIncome) }}</p>
+    </article>
+    <article class="td-stat-orange">
+      <p class="td-label text-stone-700 dark:text-amber-100">Sorties totales</p>
+      <p class="mt-2 text-2xl font-black">{{ money(summary().totalOutcome) }}</p>
+    </article>
+    <article class="rounded-lg bg-ocean/10 p-4 text-ocean dark:bg-blue-300/10 dark:text-blue-100">
+      <p class="td-label text-ocean dark:text-blue-100">Année en cours</p>
+      <p class="mt-2 text-sm font-black">+ {{ money(summary().currentYearIncome) }}</p>
+      <p class="mt-1 text-sm font-black">- {{ money(summary().currentYearOutcome) }}</p>
+    </article>
+  </div>
+
+  <form class="td-card grid gap-4 p-5 lg:grid-cols-4" [formGroup]="form" (ngSubmit)="outcome()">
+    <div class="lg:col-span-4">
+      <p class="td-label">Sortie d'argent</p>
+      <h3 class="td-section-title">Justifier une action caritative</h3>
+      <p class="td-page-subtitle">Chaque sortie est auditée et peut être associée à un projet associatif.</p>
+    </div>
+
+    <label>
+      <span class="td-label">Projet bénéficiaire</span>
+      <select class="td-input mt-1" formControlName="projectId">
+        <option value="">Action hors projet</option>
+        @for (project of projects(); track project.id) {
+          <option [value]="project.id">{{ project.title }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span class="td-label">Montant sortie</span>
+      <input class="td-input mt-1" type="number" formControlName="amount">
+    </label>
+
+    <label class="lg:col-span-2">
+      <span class="td-label">Justification</span>
+      <input class="td-input mt-1" formControlName="description" placeholder="Ex: Achat fournitures pour action solidaire">
+    </label>
+
+    @if (message()) {
+      <p class="rounded-md bg-mint/10 p-3 text-sm font-semibold text-mint lg:col-span-3">{{ message() }}</p>
+    }
+    @if (error()) {
+      <p class="rounded-md bg-coral/10 p-3 text-sm font-semibold text-coral lg:col-span-3">{{ error() }}</p>
+    }
+
+    <div class="lg:col-span-4 flex justify-end">
+      <button class="td-button-orange" type="submit" [disabled]="form.invalid">Enregistrer la sortie</button>
+    </div>
+  </form>
+
+  <div class="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+    <article class="td-card p-5">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="td-label">Origine de la caisse</p>
+          <h3 class="td-section-title">Pénalités payées</h3>
+        </div>
+        <span class="td-pill">{{ incomeMovements().length }} entrées</span>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        @for (movement of incomeMovements(); track movement.id) {
+          <div class="td-panel p-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="font-black text-ink dark:text-white">{{ movement.memberFullName || 'Membre non renseigné' }}</p>
+                <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ movement.description }}</p>
+              </div>
+              <span class="font-black text-mint">{{ signedMoney(movement.amount) }}</span>
+            </div>
+          </div>
+        } @empty {
+          <p class="td-panel p-4 text-sm td-muted">Aucune pénalité payée enregistrée dans la caisse.</p>
+        }
+      </div>
+    </article>
+
+    <article class="td-card overflow-x-auto">
+      <div class="flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <p class="td-label">Historique</p>
+          <h3 class="td-section-title">Mouvements de caisse</h3>
+        </div>
+        <span class="td-pill">{{ outcomeMovements().length }} sorties</span>
+      </div>
+      <table class="td-table min-w-[980px]">
+        <thead class="td-table-head">
+          <tr>
+            <th class="px-4 py-3">Date</th>
+            <th class="px-4 py-3">Type</th>
+            <th class="px-4 py-3">Montant</th>
+            <th class="px-4 py-3">Projet</th>
+            <th class="px-4 py-3">Description</th>
+            <th class="px-4 py-3">Créé par</th>
+          </tr>
+        </thead>
+        <tbody class="td-table-body">
+          @for (movement of movements(); track movement.id) {
+            <tr class="td-table-row">
+              <td class="px-4 py-3">{{ formatDate(movement.movementDate) }}</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-black" [class]="movementClass(movement)">
+                  {{ movementLabel(movement.type) }}
+                </span>
+              </td>
+              <td class="px-4 py-3 font-black" [class.text-mint]="movement.amount > 0" [class.text-coral]="movement.amount < 0">
+                {{ signedMoney(movement.amount) }}
+              </td>
+              <td class="px-4 py-3">{{ movement.projectTitle || '-' }}</td>
+              <td class="max-w-sm px-4 py-3">{{ movement.description }}</td>
+              <td class="px-4 py-3">{{ movement.createdByFullName || '-' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-4 py-8 text-center td-muted">Aucun mouvement de caisse.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </article>
+  </div>
+</section>

@@ -1,0 +1,57 @@
+    <section class="space-y-5">
+      <div class="td-page-hero">
+        <p class="td-label">Utilisateur</p>
+        <h2 class="td-page-title">Profil</h2>
+        <p class="td-page-subtitle">Modifiez vos informations personnelles et votre compte Mobile Money.</p>
+        <dl class="mt-6 grid gap-4 sm:grid-cols-3">
+          <div class="td-panel p-4">
+            <dt class="td-label">Email</dt>
+            <dd class="mt-1 font-semibold">{{ auth.token()?.email }}</dd>
+          </div>
+          <div class="td-panel p-4">
+            <dt class="td-label">Rôle</dt>
+            <dd class="mt-1 font-semibold">{{ auth.token()?.role }}</dd>
+          </div>
+          <div class="td-panel p-4">
+            <dt class="td-label">Cotisation</dt>
+            <dd class="mt-1 font-semibold">{{ member()?.contributionType || '-' }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <form class="td-card grid gap-4 p-5 md:grid-cols-2" [formGroup]="form" (ngSubmit)="save()">
+        <div class="md:col-span-2">
+          <p class="td-label">Informations personnelles</p>
+          <h3 class="td-section-title mt-1">Modifier mes informations</h3>
+        </div>
+        <label><span class="td-label">Prénom</span><input class="td-input mt-1" formControlName="firstName"></label>
+        <label><span class="td-label">Nom</span><input class="td-input mt-1" formControlName="lastName"></label>
+        <label><span class="td-label">Téléphone</span><input class="td-input mt-1" formControlName="phone"></label>
+        <label><span class="td-label">Pays</span><input class="td-input mt-1" formControlName="country"></label>
+        <label><span class="td-label">Ville</span><input class="td-input mt-1" formControlName="city"></label>
+        <label><span class="td-label">Photo URL</span><input class="td-input mt-1" formControlName="photoUrl"></label>
+        <label class="md:col-span-2"><span class="td-label">Adresse</span><input class="td-input mt-1" formControlName="fullAddress"></label>
+        <label><span class="td-label">Contact d'urgence</span><input class="td-input mt-1" formControlName="emergencyContactName"></label>
+        <label><span class="td-label">Téléphone d'urgence</span><input class="td-input mt-1" formControlName="emergencyContactPhone"></label>
+        <label>
+          <span class="td-label">Compte Mobile Money</span>
+          <select class="td-input mt-1" formControlName="mobileMoneyProvider">
+            <option value="ORANGE_MONEY">Orange Money</option>
+            <option value="MTN_MONEY">MTN Money</option>
+          </select>
+        </label>
+        <label><span class="td-label">Numéro Mobile Money</span><input class="td-input mt-1" formControlName="mobileMoneyNumber"></label>
+        <label class="md:col-span-2"><span class="td-label">Nom du compte Mobile Money</span><input class="td-input mt-1" formControlName="mobileMoneyAccountName"></label>
+
+        @if (message()) {
+          <p class="md:col-span-2 rounded-md bg-mint/10 p-3 text-sm font-semibold text-mint">{{ message() }}</p>
+        }
+        @if (error()) {
+          <p class="md:col-span-2 rounded-md bg-coral/10 p-3 text-sm font-semibold text-coral">{{ error() }}</p>
+        }
+
+        <div class="md:col-span-2 flex justify-end">
+          <button class="td-button-violet" type="submit" [disabled]="form.invalid || saving()">Enregistrer</button>
+        </div>
+      </form>
+    </section>

@@ -1,0 +1,59 @@
+<section class="space-y-5">
+  <div class="td-page-hero">
+    <p class="td-label">Réception des fonds</p>
+    <h2 class="td-page-title">Bénéficiaires</h2>
+    <p class="td-page-subtitle">Le montant reçu est calculé automatiquement à partir des cotisations versées sur le cycle.</p>
+  </div>
+
+  <form class="td-card grid gap-4 p-5 md:grid-cols-3" [formGroup]="form" (ngSubmit)="confirm()">
+    @if (auth.isPresident()) {
+      <label>
+        <span class="td-label">Cycle</span>
+        <select class="td-input mt-1" [value]="selectedCycle()?.id || ''" (change)="chooseCycle($any($event.target).value)">
+          <option value="">Choisir un cycle</option>
+          @for (cycle of cycles(); track cycle.id) {
+            <option [value]="cycle.id">{{ cycle.month }}/{{ cycle.year }} - {{ beneficiaryNames(cycle) }}</option>
+          }
+        </select>
+      </label>
+    } @else {
+      <div class="td-panel p-3">
+        <p class="td-label">Cycle bénéficiaire</p>
+        <p class="mt-1 font-black text-ink dark:text-white">
+          @if (selectedCycle(); as cycle) {
+            {{ cycle.month }}/{{ cycle.year }}
+          } @else {
+            Aucun cycle ne vous désigne bénéficiaire
+          }
+        </p>
+      </div>
+    }
+
+    @if (selectedCycle(); as cycle) {
+      <div class="td-panel p-3">
+        <p class="td-label">Bénéficiaire(s)</p>
+        <p class="mt-1 font-black text-saffron dark:text-amber-200">{{ beneficiaryNames(cycle) }}</p>
+      </div>
+      <div class="td-panel p-3">
+        <p class="td-label">Montant reçu calculé</p>
+        <p class="mt-1 font-black text-mint">{{ money(cycle.collectedAmount) }}</p>
+      </div>
+      <div class="td-panel p-3">
+        <p class="td-label">Montant attendu</p>
+        <p class="mt-1 font-black text-ink dark:text-white">{{ money(cycle.expectedAmount) }}</p>
+      </div>
+    }
+
+    <label class="md:col-span-3">
+      <span class="td-label">Commentaire</span>
+      <input class="td-input mt-1" formControlName="comment" placeholder="Confirmation ou réserve éventuelle">
+    </label>
+    <div class="md:col-span-3 flex justify-end">
+      <button class="td-button-violet" type="submit" [disabled]="!selectedCycle()">Confirmer réception</button>
+    </div>
+  </form>
+
+  @if (result(); as result) {
+    <pre class="td-card overflow-auto p-5 text-xs">{{ result }}</pre>
+  }
+</section>

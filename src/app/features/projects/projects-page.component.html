@@ -1,0 +1,251 @@
+<section class="space-y-5">
+  <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="td-label">Actions associatives</p>
+      <h2 class="td-page-title">Projets</h2>
+      <p class="td-page-subtitle">Créez les projets, affectez un responsable, suivez les décisions, les dates et les budgets.</p>
+    </div>
+    @if (auth.isPresident()) {
+      <span class="td-pill">Gestion président</span>
+    }
+  </div>
+
+  <div class="grid gap-3 md:grid-cols-4">
+    <article class="td-stat-mint">
+      <p class="td-label text-mint dark:text-emerald-200">Actifs</p>
+      <p class="mt-2 text-3xl font-black">{{ activeProjectsCount() }}</p>
+    </article>
+    <article class="td-stat-violet">
+      <p class="td-label text-plum dark:text-violet-200">Décisions ouvertes</p>
+      <p class="mt-2 text-3xl font-black">{{ openDecisionsCount() }}</p>
+    </article>
+    <article class="td-stat-orange">
+      <p class="td-label text-stone-700 dark:text-amber-100">Budget estimé</p>
+      <p class="mt-2 text-2xl font-black">{{ money(totalEstimatedBudget()) }}</p>
+    </article>
+    <article class="rounded-lg bg-coral/10 p-4 text-coral dark:bg-red-300/10 dark:text-red-100">
+      <p class="td-label text-coral dark:text-red-100">Budget réel</p>
+      <p class="mt-2 text-2xl font-black">{{ money(totalRealBudget()) }}</p>
+    </article>
+  </div>
+
+  @if (auth.isPresident()) {
+    <form class="td-card grid gap-4 p-5 lg:grid-cols-4" [formGroup]="form" (ngSubmit)="save()">
+      <div class="lg:col-span-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="td-label">{{ editingProject() ? 'Modification' : 'Nouveau projet' }}</p>
+          <h3 class="td-section-title">{{ editingProject() ? editingProject()?.title : 'Ajouter un projet associatif' }}</h3>
+        </div>
+        @if (editingProject()) {
+          <button type="button" class="td-button-secondary" (click)="resetForm()">Annuler</button>
+        }
+      </div>
+
+      <label class="lg:col-span-2">
+        <span class="td-label">Titre</span>
+        <input class="td-input mt-1" formControlName="title" placeholder="Ex: Mentorat étudiants TIC">
+      </label>
+
+      <label>
+        <span class="td-label">Responsable</span>
+        <select class="td-input mt-1" formControlName="responsibleId">
+          <option value="">Non assigné</option>
+          @for (member of members(); track member.id) {
+            <option [value]="member.id">{{ member.firstName }} {{ member.lastName }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span class="td-label">Statut</span>
+        <select class="td-input mt-1" formControlName="status">
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ statusLabel(status) }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="lg:col-span-4">
+        <span class="td-label">Description</span>
+        <textarea class="td-input mt-1 min-h-24" formControlName="description" placeholder="Objectif, contexte, livrables attendus"></textarea>
+      </label>
+
+      <label>
+        <span class="td-label">Budget estimé</span>
+        <input class="td-input mt-1" type="number" formControlName="estimatedBudget">
+      </label>
+
+      <label>
+        <span class="td-label">Budget réel</span>
+        <input class="td-input mt-1" type="number" formControlName="realBudget">
+      </label>
+
+      <label>
+        <span class="td-label">Date de début</span>
+        <input class="td-input mt-1" type="date" formControlName="startDate">
+      </label>
+
+      <label>
+        <span class="td-label">Date de fin</span>
+        <input class="td-input mt-1" type="date" formControlName="endDate">
+      </label>
+
+      @if (message()) {
+        <p class="rounded-md bg-mint/10 p-3 text-sm font-semibold text-mint lg:col-span-3">{{ message() }}</p>
+      }
+      @if (error()) {
+        <p class="rounded-md bg-coral/10 p-3 text-sm font-semibold text-coral lg:col-span-3">{{ error() }}</p>
+      }
+
+      <div class="lg:col-span-4 flex justify-end">
+        <button class="td-button-violet" type="submit" [disabled]="form.invalid">
+          {{ editingProject() ? 'Mettre à jour' : 'Créer le projet' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="td-card flex flex-wrap items-center gap-2 p-4">
+    <button type="button" class="td-button-secondary" [class.td-button-violet]="statusFilter() === ''" (click)="filter('')">Tous</button>
+    @for (status of statuses; track status) {
+      <button type="button" class="td-button-secondary" [class.td-button-violet]="statusFilter() === status" (click)="filter(status)">
+        {{ statusLabel(status) }}
+      </button>
+    }
+  </div>
+
+  @if (selectedProject(); as project) {
+    <section class="td-card p-5">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p class="td-label">Décisions associées</p>
+          <h3 class="td-section-title">{{ project.title }}</h3>
+          <p class="td-page-subtitle">Suivez les décisions directement attachées à ce projet.</p>
+        </div>
+        <span class="td-pill">{{ project.openDecisionsCount }} ouvertes</span>
+      </div>
+
+      @if (auth.isPresident()) {
+        <form class="mt-4 grid gap-3 lg:grid-cols-4" [formGroup]="decisionForm" (ngSubmit)="createDecision()">
+          <label class="lg:col-span-2">
+            <span class="td-label">Titre décision</span>
+            <input class="td-input mt-1" formControlName="title" placeholder="Décision ou action à suivre">
+          </label>
+          <label>
+            <span class="td-label">Responsable</span>
+            <select class="td-input mt-1" formControlName="responsibleId">
+              <option value="">Non assigné</option>
+              @for (member of members(); track member.id) {
+                <option [value]="member.id">{{ member.firstName }} {{ member.lastName }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span class="td-label">Échéance</span>
+            <input class="td-input mt-1" type="date" formControlName="dueDate">
+          </label>
+          <label class="lg:col-span-3">
+            <span class="td-label">Description</span>
+            <textarea class="td-input mt-1 min-h-20" formControlName="description" placeholder="Contexte, action attendue, livrable"></textarea>
+          </label>
+          <label>
+            <span class="td-label">Priorité</span>
+            <select class="td-input mt-1" formControlName="priority">
+              @for (priority of decisionPriorities; track priority) {
+                <option [value]="priority">{{ decisionPriorityLabel(priority) }}</option>
+              }
+            </select>
+          </label>
+          <div class="lg:col-span-4 flex justify-end">
+            <button class="td-button-orange" type="submit" [disabled]="decisionForm.invalid">Ajouter décision</button>
+          </div>
+        </form>
+      }
+
+      <div class="mt-4 grid gap-3 md:grid-cols-2">
+        @for (decision of projectDecisions(); track decision.id) {
+          <article class="td-panel p-4">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <h4 class="font-black text-ink dark:text-white">{{ decision.title }}</h4>
+              <span class="td-pill">{{ decisionStatusLabel(decision.status) }}</span>
+            </div>
+            <p class="mt-2 text-sm leading-6 text-stone-600 dark:text-stone-300">{{ decision.description }}</p>
+            <div class="mt-3 flex flex-wrap gap-2 text-xs font-bold text-stone-500 dark:text-stone-400">
+              <span>Priorité {{ decisionPriorityLabel(decision.priority) }}</span>
+              <span>Échéance {{ decision.dueDate || '-' }}</span>
+            </div>
+          </article>
+        } @empty {
+          <p class="td-panel p-4 text-sm td-muted">Aucune décision associée à ce projet.</p>
+        }
+      </div>
+    </section>
+  }
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    @for (project of projects(); track project.id) {
+      <article class="td-card p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-black" [class]="statusClass(project.status)">
+              {{ statusLabel(project.status) }}
+            </span>
+            <h3 class="mt-3 text-xl font-black text-ink dark:text-white">{{ project.title }}</h3>
+            <p class="mt-2 line-clamp-3 text-sm leading-6 text-stone-600 dark:text-stone-300">{{ project.description }}</p>
+          </div>
+          @if (auth.isPresident()) {
+            <button type="button" class="td-button-secondary" (click)="edit(project)">Modifier</button>
+          }
+        </div>
+
+        <div class="mt-4 grid gap-3 sm:grid-cols-3">
+          <div class="td-panel p-3">
+            <p class="td-label">Responsable</p>
+            <p class="mt-1 font-bold text-ink dark:text-white">{{ project.responsibleFullName || 'Non assigné' }}</p>
+          </div>
+          <div class="td-panel p-3">
+            <p class="td-label">Décisions</p>
+            <p class="mt-1 font-bold text-ink dark:text-white">{{ project.openDecisionsCount }} ouvertes / {{ project.decisionsCount }}</p>
+          </div>
+          <div class="td-panel p-3">
+            <p class="td-label">Période</p>
+            <p class="mt-1 font-bold text-ink dark:text-white">{{ project.startDate || '-' }} → {{ project.endDate || '-' }}</p>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="flex items-center justify-between gap-3 text-sm">
+            <span class="font-bold text-stone-600 dark:text-stone-300">{{ money(project.realBudget) }} utilisés</span>
+            <span class="td-muted">{{ money(project.estimatedBudget) }} estimés</span>
+          </div>
+          <div class="mt-2 h-2 overflow-hidden rounded-full bg-stone-100 dark:bg-white/10">
+            <div class="h-full rounded-full bg-gradient-to-r from-mint via-plum to-saffron" [style.width.%]="budgetProgress(project)"></div>
+          </div>
+        </div>
+
+        @if (auth.isPresident()) {
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button type="button" class="td-button-orange px-2.5 py-1.5 text-xs" (click)="selectProject(project)">
+              Décisions
+            </button>
+            @for (status of statuses; track status) {
+              @if (status !== project.status) {
+                <button type="button" class="td-button-secondary px-2.5 py-1.5 text-xs" (click)="changeStatus(project, status)">
+                  {{ statusLabel(status) }}
+                </button>
+              }
+            }
+          </div>
+        } @else {
+          <div class="mt-4">
+            <button type="button" class="td-button-secondary px-2.5 py-1.5 text-xs" (click)="selectProject(project)">
+              Voir les décisions
+            </button>
+          </div>
+        }
+      </article>
+    } @empty {
+      <div class="td-card p-8 text-center td-muted lg:col-span-2">Aucun projet pour ce filtre.</div>
+    }
+  </div>
+</section>

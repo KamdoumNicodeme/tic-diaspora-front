@@ -1,0 +1,112 @@
+<section class="space-y-6">
+  <div class="td-page-hero">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="td-label">Vue globale</p>
+        <h2 class="td-page-title">Dashboard</h2>
+        <p class="td-page-subtitle">Pilotage mensuel des réunions, de la tontine, des absences et des décisions.</p>
+      </div>
+      <a routerLink="/meetings" class="td-button-violet">Réunions</a>
+    </div>
+  </div>
+
+  @if (summary(); as data) {
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <article class="td-stat-violet">
+        <p class="td-label">Membres actifs</p>
+        <p class="mt-3 text-3xl font-black text-ink dark:text-white">{{ data.activeMembers }}</p>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ data.totalMembers }} membres au total</p>
+      </article>
+      <article class="td-stat-mint">
+        <p class="td-label">Tontine collectée</p>
+        <p class="mt-3 text-3xl font-black text-mint">{{ money(data.tontineCollectedAmount) }}</p>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Reste {{ money(data.tontineRemainingAmount) }}</p>
+      </article>
+      <article class="td-card p-4">
+        <p class="td-label">Caisse caritative</p>
+        <p class="mt-3 text-3xl font-black text-ocean dark:text-blue-300">{{ money(data.charityFundBalance) }}</p>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Pénalités en attente {{ money(data.pendingPenaltiesAmount) }}</p>
+      </article>
+      <article class="td-card p-4">
+        <p class="td-label">Décisions ouvertes</p>
+        <p class="mt-3 text-3xl font-black text-plum dark:text-violet-300">{{ data.openDecisions }}</p>
+        <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">{{ data.ongoingProjects }} projets en cours</p>
+      </article>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-3">
+      <article class="td-card p-5 lg:col-span-2">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p class="td-label">Prochaine réunion</p>
+            <h3 class="mt-1 text-xl font-black text-ink dark:text-white">{{ data.nextMeetingTitle || 'Réunion non planifiée' }}</h3>
+          </div>
+          @if (data.nextMeetingId) {
+            <a class="td-button-secondary" [routerLink]="['/meetings', data.nextMeetingId]">Ouvrir</a>
+          }
+        </div>
+        <dl class="mt-4 grid gap-3 sm:grid-cols-3">
+          <div class="td-panel p-3">
+            <dt class="td-label">Date</dt>
+            <dd class="mt-1 font-semibold text-ink dark:text-white">{{ data.nextMeetingDate || 'Non planifiée' }}</dd>
+          </div>
+          <div class="td-panel p-3">
+            <dt class="td-label">Président séance</dt>
+            <dd class="mt-1 text-sm font-semibold text-ink dark:text-white">{{ data.plannedChairpersonFullName || 'À désigner' }}</dd>
+          </div>
+          <div class="td-panel p-3">
+            <dt class="td-label">Bénéficiaire(s)</dt>
+            <dd class="mt-1 text-sm font-semibold text-ink dark:text-white">{{ beneficiaryNames(data) }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="td-card p-5">
+        <p class="td-label">Absences</p>
+        <p class="mt-3 text-3xl font-black text-coral">{{ data.unauthorizedAbsencesThisYear }}</p>
+        <p class="text-sm text-stone-500 dark:text-stone-400">Absences non autorisées cette année</p>
+      </article>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-3">
+      <article class="td-card p-5">
+        <h3 class="text-lg font-black text-ink dark:text-white">Membres débiteurs</h3>
+        <div class="mt-4 space-y-2">
+          @for (member of data.debtorMembers; track member.memberId) {
+            <p class="rounded-md bg-ocean/10 px-3 py-2 text-sm font-semibold text-ocean dark:bg-blue-400/10 dark:text-blue-200">
+              {{ fullName(member) }}
+            </p>
+          } @empty {
+            <p class="text-sm text-stone-500 dark:text-stone-400">Aucun membre débiteur.</p>
+          }
+        </div>
+      </article>
+      <article class="td-card p-5">
+        <h3 class="text-lg font-black text-ink dark:text-white">Proches du seuil</h3>
+        <div class="mt-4 space-y-2">
+          @for (member of data.closeToAbsenceThreshold; track member.memberId) {
+            <p class="rounded-md bg-saffron/10 px-3 py-2 text-sm font-semibold text-stone-700 dark:text-amber-200">
+              {{ fullName(member) }} - {{ member.unauthorizedAbsences }}/4
+            </p>
+          } @empty {
+            <p class="text-sm text-stone-500 dark:text-stone-400">Aucun membre proche du seuil.</p>
+          }
+        </div>
+      </article>
+      <article class="td-card p-5">
+        <h3 class="text-lg font-black text-ink dark:text-white">Membres à risque</h3>
+        <div class="mt-4 space-y-2">
+          @for (member of data.exceededAbsenceThreshold; track member.memberId) {
+            <p class="rounded-md bg-coral/10 px-3 py-2 text-sm font-semibold text-coral dark:text-red-200">
+              {{ fullName(member) }} - {{ member.unauthorizedAbsences }} absences
+            </p>
+          } @empty {
+            <p class="text-sm text-stone-500 dark:text-stone-400">Aucun membre au-dessus du seuil.</p>
+          }
+        </div>
+      </article>
+    </div>
+  } @else {
+    <div class="td-card p-6 text-sm text-stone-500 dark:text-stone-400">Chargement du dashboard...</div>
+  }
+</section>

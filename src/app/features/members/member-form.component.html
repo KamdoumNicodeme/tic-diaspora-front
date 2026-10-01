@@ -1,0 +1,51 @@
+    <section class="space-y-5">
+      <div class="td-page-hero">
+        <p class="td-label">Membre</p>
+        <h2 class="td-page-title">Créer un membre</h2>
+        <p class="td-page-subtitle">Ajoutez un membre actif avec son type de cotisation et son compte Mobile Money.</p>
+      </div>
+
+      <form class="td-card grid gap-4 p-5 md:grid-cols-2" [formGroup]="form" (ngSubmit)="submit()">
+        <label><span class="td-label">Prénom</span><input class="td-input mt-1" formControlName="firstName"></label>
+        <label><span class="td-label">Nom</span><input class="td-input mt-1" formControlName="lastName"></label>
+        <label><span class="td-label">Email</span><input class="td-input mt-1" formControlName="email" type="email"></label>
+        <label><span class="td-label">Téléphone</span><input class="td-input mt-1" formControlName="phone"></label>
+        <label><span class="td-label">Pays</span><input class="td-input mt-1" formControlName="country"></label>
+        <label><span class="td-label">Ville</span><input class="td-input mt-1" formControlName="city"></label>
+        <label class="md:col-span-2"><span class="td-label">Adresse</span><input class="td-input mt-1" formControlName="fullAddress"></label>
+        <label>
+          <span class="td-label">Compte Mobile Money</span>
+          <select class="td-input mt-1" formControlName="mobileMoneyProvider">
+            <option value="ORANGE_MONEY">Orange Money</option>
+            <option value="MTN_MONEY">MTN Money</option>
+          </select>
+        </label>
+        <label><span class="td-label">Numéro Mobile Money</span><input class="td-input mt-1" formControlName="mobileMoneyNumber"></label>
+        <label class="md:col-span-2"><span class="td-label">Nom du compte Mobile Money</span><input class="td-input mt-1" formControlName="mobileMoneyAccountName"></label>
+        <label><span class="td-label">Date d'adhésion</span><input class="td-input mt-1" formControlName="joinedAt" type="date"></label>
+        <label>
+          <span class="td-label">Rôle</span>
+          <select class="td-input mt-1" formControlName="role">
+            <option value="MEMBER">MEMBER</option>
+            <option value="PRESIDENT">PRESIDENT</option>
+          </select>
+        </label>
+        <label>
+          <span class="td-label">Type de cotisation</span>
+          <select class="td-input mt-1" formControlName="contributionType">
+            <option value="XAF_50000">50000 XAF</option>
+            <option value="XAF_100000">100000 XAF</option>
+          </select>
+        </label>
+        <label><span class="td-label">Mot de passe temporaire</span><input class="td-input mt-1" formControlName="temporaryPassword"></label>
+
+        @if (error()) {
+          <p class="md:col-span-2 rounded-md bg-coral/10 p-3 text-sm font-semibold text-coral">{{ error() }}</p>
+        }
+
+        <div class="md:col-span-2 flex justify-end gap-3">
+          <button class="td-button-secondary" type="button" (click)="cancel()">Annuler</button>
+          <button class="td-button-violet" type="submit" [disabled]="form.invalid || saving()">Créer</button>
+        </div>
+      </form>
+    </section>

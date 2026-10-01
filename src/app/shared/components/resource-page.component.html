@@ -1,0 +1,33 @@
+    <section class="space-y-5">
+      <div class="td-page-hero">
+        <p class="td-label">{{ config().eyebrow }}</p>
+        <h2 class="td-page-title">{{ config().title }}</h2>
+      </div>
+
+      <div class="td-card overflow-x-auto">
+        <table class="td-table min-w-[760px]">
+          <thead class="td-table-head">
+            <tr>
+              @for (column of config().columns; track column.key) {
+                <th class="px-4 py-3">{{ column.label }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody class="td-table-body">
+            @for (row of rows(); track trackRow($index, row)) {
+              <tr class="td-table-row">
+                @for (column of config().columns; track column.key) {
+                  <td class="max-w-64 truncate px-4 py-3">{{ value(row, column.key) }}</td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="config().columns.length" class="px-4 py-8 text-left sm:text-center td-muted">
+                  Aucune donnée.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>

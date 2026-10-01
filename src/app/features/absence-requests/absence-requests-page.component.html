@@ -1,0 +1,99 @@
+    <section class="space-y-5">
+      <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="td-label">Absences</p>
+          <h2 class="td-page-title">Demandes d'absence</h2>
+          <p class="td-page-subtitle">Déclarez, suivez et validez les absences liées aux réunions mensuelles.</p>
+        </div>
+        <span class="td-pill">{{ auth.isPresident() ? 'Vue président' : 'Vue membre' }}</span>
+      </div>
+
+      @if (!auth.isPresident()) {
+        <form class="td-card grid gap-4 p-5 md:grid-cols-[1fr_2fr_auto]" [formGroup]="requestForm" (ngSubmit)="submit()">
+          <label>
+            <span class="td-label">Réunion</span>
+            <select class="td-input mt-1" formControlName="meetingId">
+              <option value="">Choisir une réunion</option>
+              @for (meeting of availableMeetings(); track meeting.id) {
+                <option [value]="meeting.id">{{ meeting.title }} - {{ meeting.meetingDate }} {{ meeting.plannedStartTime }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span class="td-label">Motif</span>
+            <input class="td-input mt-1" formControlName="reason" placeholder="Explique brièvement ton absence">
+          </label>
+          <div class="flex items-end">
+            <button class="td-button-violet w-full" type="submit" [disabled]="requestForm.invalid">Envoyer</button>
+          </div>
+        </form>
+      }
+
+      <div class="td-card overflow-x-auto">
+        <table class="td-table min-w-[1120px] ">
+          <thead class="td-table-head">
+            <tr>
+              <th class="px-4 py-3">Membre</th>
+              <th class="px-4 py-3">Réunion</th>
+              <th class="px-4 py-3">Demandée le</th>
+              <th class="px-4 py-3">Heures avant</th>
+              <th class="px-4 py-3">Motif</th>
+              <th class="px-4 py-3">Statut</th>
+              <th class="px-4 py-3">Commentaire</th>
+              @if (auth.isPresident()) {
+                <th class="px-4 py-3">Validation</th>
+                <th class="px-4 py-3"></th>
+              }
+            </tr>
+          </thead>
+          <tbody class="td-table-body">
+            @for (request of requests(); track request.id) {
+              <tr>
+                <td class="px-4 py-3 font-semibold text-ink dark:text-white">{{ request.memberFullName }}</td>
+                <td class="px-4 py-3">
+                  <p class="font-semibold">{{ request.meetingTitle }}</p>
+                  <p class="text-xs td-muted">{{ request.meetingDate || '-' }} · {{ request.plannedStartTime || '-' }}</p>
+                </td>
+                <td class="px-4 py-3">{{ request.requestedAt }}</td>
+                <td class="px-4 py-3">{{ request.hoursBeforeMeeting }} h</td>
+                <td class="px-4 py-3">{{ request.reason }}</td>
+                <td class="px-4 py-3"><span class="td-pill">{{ request.status }}</span></td>
+                <td class="px-4 py-3">{{ request.validationComment || '-' }}</td>
+                @if (auth.isPresident()) {
+                  <td class="px-4 py-3">
+                    @if (canValidate(request)) {
+                      <div class="space-y-2">
+                        <input
+                          class="td-input"
+                          [value]="validationComment(request.id)"
+                          placeholder="Commentaire"
+                          (input)="setValidationComment(request.id, $event)"
+                        >
+                        <label class="flex items-center gap-2 text-xs font-semibold text-stone-600 dark:text-stone-300">
+                          <input type="checkbox" [checked]="exceptionalApproval(request.id)" (change)="setExceptionalApproval(request.id, $event)">
+                          Validation exceptionnelle
+                        </label>
+                      </div>
+                    } @else {
+                        <span class="td-muted">Traité</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    @if (canValidate(request)) {
+                      <div class="flex justify-end gap-2">
+                        <button class="td-button-secondary" type="button" (click)="reject(request.id)">Refuser</button>
+                        <button class="td-button-violet" type="button" (click)="approve(request.id)">Approuver</button>
+                      </div>
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td class="px-4 py-6 td-muted" [attr.colspan]="auth.isPresident() ? 9 : 7">Aucune demande d'absence.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>

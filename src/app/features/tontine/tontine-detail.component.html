@@ -1,0 +1,98 @@
+    @if (cycle(); as cycle) {
+      <section class="space-y-5">
+        <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <a routerLink="/tontine" class="td-soft-link px-0">Retour</a>
+            <h2 class="td-page-title">Cycle {{ cycle.month }}/{{ cycle.year }}</h2>
+            <p class="td-page-subtitle">{{ cycle.status }}</p>
+          </div>
+          @if (auth.isPresident()) {
+            <div class="flex gap-2">
+              <button class="td-button-secondary" type="button" (click)="open(cycle.id)">Ouvrir</button>
+              <button class="td-button-violet" type="button" (click)="close(cycle.id)">Clôturer</button>
+            </div>
+          }
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-[1fr_1fr]">
+          <article class="td-card p-5">
+            <p class="td-label">Bénéficiaire(s)</p>
+            <div class="mt-3 grid gap-3">
+              @for (recipient of beneficiaryRecipients(cycle); track recipient.name) {
+                <div class="rounded-md bg-saffron/10 p-3 dark:bg-amber-300/10">
+                  <h3 class="text-xl font-black text-saffron dark:text-amber-200">{{ recipient.name || 'à définir' }}</h3>
+                  <div class="mt-2 grid gap-1 text-sm text-stone-600 dark:text-stone-300">
+                    <p>Part à recevoir: <strong>{{ money(recipient.expectedAmount) }}</strong></p>
+                    <p>{{ paymentProvider(recipient) }}: {{ paymentNumber(recipient) }}</p>
+                    <p>Nom du compte: {{ paymentAccountName(recipient) }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+          </article>
+          @if (auth.isPresident()) {
+            <form class="td-card grid gap-4 p-5 md:grid-cols-2" [formGroup]="beneficiaryForm" (ngSubmit)="changeBeneficiary(cycle.id)">
+              <label>
+                <span class="td-label">Bénéficiaire principal</span>
+                <select class="td-input mt-1" formControlName="beneficiaryId" (change)="onPrimaryBeneficiaryChange()">
+                  <option value="">Choisir un membre</option>
+                  @for (member of members(); track member.id) {
+                    <option [value]="member.id">{{ member.firstName }} {{ member.lastName }} · {{ member.contributionType === 'XAF_50000' ? '50 000' : '100 000' }}</option>
+                  }
+                </select>
+              </label>
+              @if (isPrimaryBeneficiary50000()) {
+                <label>
+                  <span class="td-label">Autre bénéficiaire 50 000 obligatoire</span>
+                  <select class="td-input mt-1" formControlName="secondaryBeneficiaryId">
+                    <option value="">Choisir un autre membre 50 000</option>
+                    @for (member of eligibleSecondaryBeneficiaries(); track member.id) {
+                      <option [value]="member.id">{{ member.firstName }} {{ member.lastName }}</option>
+                    }
+                  </select>
+                </label>
+              } @else {
+                <div class="td-panel p-3">
+                  <p class="td-label">Règle appliquée</p>
+                  <p class="mt-1 text-sm font-semibold text-stone-700 dark:text-stone-200">Un bénéficiaire 100 000 bouffe seul.</p>
+                </div>
+              }
+              <div class="flex flex-wrap items-center justify-between gap-3 md:col-span-2">
+                <label class="flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-200">
+                  <input class="h-4 w-4 rounded border-stone-300 text-plum" type="checkbox" formControlName="unanimousAgreement">
+                  Accord unanime obtenu après discussion
+                </label>
+                <button class="td-button-violet" type="submit" [disabled]="beneficiaryForm.invalid">Enregistrer</button>
+              </div>
+            </form>
+          }
+        </div>
+
+        <div class="td-card overflow-x-auto">
+          <table class="td-table min-w-[980px] ">
+            <thead class="td-table-head">
+              <tr><th class="px-4 py-3">Membre</th><th class="px-4 py-3">Attendu</th><th class="px-4 py-3">Payé</th><th class="px-4 py-3">Reste</th><th class="px-4 py-3">Référence</th><th class="px-4 py-3">Preuve</th><th class="px-4 py-3">Statut</th></tr>
+            </thead>
+            <tbody class="td-table-body">
+              @for (contribution of contributions(); track contribution.id) {
+                <tr>
+                  <td class="px-4 py-3 font-semibold">{{ contribution.memberFullName || contribution.memberId }}</td>
+                  <td class="px-4 py-3">{{ contribution.expectedAmount }}</td>
+                  <td class="px-4 py-3">{{ contribution.paidAmount }}</td>
+                  <td class="px-4 py-3">{{ contribution.remainingAmount }}</td>
+                  <td class="px-4 py-3">{{ contribution.lastTransactionReference || '-' }}</td>
+                  <td class="px-4 py-3">
+                    @if (contribution.lastProofUrl) {
+                      <button class="td-button-secondary" type="button" (click)="openProof(contribution.lastProofUrl)">Voir</button>
+                    } @else {
+                      <span class="text-stone-400">-</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3"><span class="td-pill">{{ contribution.status }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }

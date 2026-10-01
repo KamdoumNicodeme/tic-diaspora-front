@@ -1,0 +1,69 @@
+    @if (member(); as member) {
+      <section class="space-y-5">
+        <div class="td-page-hero flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <a routerLink="/members" class="td-soft-link px-0">Retour</a>
+            <h2 class="td-page-title">{{ member.firstName }} {{ member.lastName }}</h2>
+            <p class="td-page-subtitle">{{ member.email }}</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="td-button-secondary" type="button" (click)="suspend(member.id)">Suspendre</button>
+            <button class="td-button-violet" type="button" (click)="reactivate(member.id)">Réactiver</button>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-4">
+          <article class="td-stat-violet"><p class="td-label">Statut</p><p class="mt-2 font-black">{{ member.status }}</p></article>
+          <article class="td-stat-mint"><p class="td-label">Cotisation</p><p class="mt-2 font-black">{{ member.contributionType }}</p></article>
+          <article class="td-stat-orange"><p class="td-label">Animations</p><p class="mt-2 font-black">{{ member.totalMeetingsChaired }}</p></article>
+          <article class="td-card p-4"><p class="td-label">Pénalités impayées</p><p class="mt-2 font-black text-coral">{{ member.unpaidPenaltiesAmount }} XAF</p></article>
+        </div>
+
+        <article class="td-card overflow-x-auto">
+          <div class="border-b border-stone-100 px-5 py-4">
+            <h3 class="td-section-title">Historique des cotisations</h3>
+          </div>
+          <table class="td-table min-w-[920px] ">
+            <thead class="td-table-head">
+              <tr><th class="px-4 py-3">Cycle</th><th class="px-4 py-3">Attendu</th><th class="px-4 py-3">Payé</th><th class="px-4 py-3">Reste</th><th class="px-4 py-3">Référence</th><th class="px-4 py-3">Preuve</th><th class="px-4 py-3">Statut</th></tr>
+            </thead>
+            <tbody class="td-table-body">
+              @for (contribution of contributions(); track contribution.id) {
+                <tr>
+                  <td class="px-4 py-3 td-muted">{{ contribution.cycleId }}</td>
+                  <td class="px-4 py-3">{{ contribution.expectedAmount }} XAF</td>
+                  <td class="px-4 py-3 font-bold">{{ contribution.paidAmount }} XAF</td>
+                  <td class="px-4 py-3">{{ contribution.remainingAmount }} XAF</td>
+                  <td class="px-4 py-3">{{ contribution.lastTransactionReference || '-' }}</td>
+                  <td class="px-4 py-3">
+                    @if (contribution.lastProofUrl) {
+                      <button class="td-button-secondary" type="button" (click)="openProof(contribution.lastProofUrl)">Voir</button>
+                    } @else {
+                      <span class="text-stone-400">-</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3"><span class="td-pill">{{ contribution.status }}</span></td>
+                </tr>
+              } @empty {
+                <tr><td class="px-4 py-5 td-muted" colspan="7">Aucune cotisation trouvée.</td></tr>
+              }
+            </tbody>
+          </table>
+        </article>
+
+        <article class="td-card p-5">
+          <h3 class="td-section-title">Informations complètes</h3>
+          <dl class="mt-4 grid gap-3 md:grid-cols-2">
+            <div><dt class="td-label">Téléphone</dt><dd>{{ member.phone || '-' }}</dd></div>
+            <div><dt class="td-label">Localisation</dt><dd>{{ member.city || '-' }}, {{ member.country || '-' }}</dd></div>
+            <div class="md:col-span-2"><dt class="td-label">Adresse</dt><dd>{{ member.fullAddress || '-' }}</dd></div>
+            <div><dt class="td-label">Compte Mobile Money</dt><dd>{{ paymentProvider(member) }} - {{ paymentNumber(member) }}</dd></div>
+            <div><dt class="td-label">Nom du compte</dt><dd>{{ paymentAccountName(member) }}</dd></div>
+            <div><dt class="td-label">Absences autorisées</dt><dd>{{ member.annualAuthorizedAbsences }}</dd></div>
+            <div><dt class="td-label">Absences non autorisées</dt><dd>{{ member.annualUnauthorizedAbsences }}</dd></div>
+          </dl>
+        </article>
+      </section>
+    } @else {
+      <div class="td-card p-6 td-muted">Chargement...</div>
+    }
