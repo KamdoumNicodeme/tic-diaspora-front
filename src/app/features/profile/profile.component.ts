@@ -17,8 +17,11 @@ export class ProfileComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   protected readonly member = signal<Member | null>(null);
   protected readonly saving = signal(false);
+  protected readonly changingPassword = signal(false);
   protected readonly message = signal('');
   protected readonly error = signal('');
+  protected readonly passwordMessage = signal('');
+  protected readonly passwordError = signal('');
 
   protected readonly form = this.fb.nonNullable.group({
     firstName: ['', Validators.required],
@@ -33,6 +36,12 @@ export class ProfileComponent implements OnInit {
     mobileMoneyProvider: ['ORANGE_MONEY', Validators.required],
     mobileMoneyNumber: [''],
     mobileMoneyAccountName: ['']
+  });
+
+  protected readonly passwordForm = this.fb.nonNullable.group({
+    currentPassword: ['', Validators.required],
+    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    confirmPassword: ['', [Validators.required, Validators.minLength(8)]]
   });
 
   ngOnInit(): void {
@@ -75,6 +84,32 @@ export class ProfileComponent implements OnInit {
       error: () => {
         this.error.set('Modification impossible. Vérifiez les informations.');
         this.saving.set(false);
+      }
+    });
+  }
+
+  changePassword(): void {
+    if (this.passwordForm.invalid) {
+      this.passwordError.set('Tous les champs sont obligatoires et le nouveau mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
+    const raw = this.passwordForm.getRawValue();
+    if (raw.newPassword !== raw.confirmPassword) {
+      this.passwordError.set('La confirmation du nouveau mot de passe ne correspond pas.');
+      return;
+    }
+    this.changingPassword.set(true);
+    this.passwordMessage.set('');
+    this.passwordError.set('');
+    this.auth.changePassword(raw.currentPassword, raw.newPassword, raw.confirmPassword).subscribe({
+      next: () => {
+        this.passwordForm.reset();
+        this.passwordMessage.set('Mot de passe mis à jour.');
+        this.changingPassword.set(false);
+      },
+      error: () => {
+        this.passwordError.set('Modification impossible. Vérifiez votre mot de passe actuel.');
+        this.changingPassword.set(false);
       }
     });
   }

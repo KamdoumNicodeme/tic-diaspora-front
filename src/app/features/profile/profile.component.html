@@ -54,4 +54,38 @@
           <button class="td-button-violet" type="submit" [disabled]="form.invalid || saving()">Enregistrer</button>
         </div>
       </form>
+
+      <form class="td-card grid gap-4 p-5 md:grid-cols-3" [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <div class="md:col-span-3">
+          <p class="td-label">Sécurité</p>
+          <h3 class="td-section-title mt-1">Changer mon mot de passe</h3>
+          <p class="td-page-subtitle">Saisissez votre mot de passe actuel avant de choisir un nouveau mot de passe.</p>
+        </div>
+
+        <label>
+          <span class="td-label">Mot de passe actuel</span>
+          <input class="td-input mt-1" type="password" formControlName="currentPassword" autocomplete="current-password">
+        </label>
+        <label>
+          <span class="td-label">Nouveau mot de passe</span>
+          <input class="td-input mt-1" type="password" formControlName="newPassword" autocomplete="new-password">
+        </label>
+        <label>
+          <span class="td-label">Confirmer</span>
+          <input class="td-input mt-1" type="password" formControlName="confirmPassword" autocomplete="new-password">
+        </label>
+
+        @if (passwordMessage()) {
+          <p class="md:col-span-3 rounded-md bg-mint/10 p-3 text-sm font-semibold text-mint">{{ passwordMessage() }}</p>
+        }
+        @if (passwordError()) {
+          <p class="md:col-span-3 rounded-md bg-coral/10 p-3 text-sm font-semibold text-coral">{{ passwordError() }}</p>
+        }
+
+        <div class="md:col-span-3 flex justify-end">
+          <button class="td-button-orange" type="submit" [disabled]="passwordForm.invalid || changingPassword()">
+            {{ changingPassword() ? 'Modification...' : 'Changer le mot de passe' }}
+          </button>
+        </div>
+      </form>
     </section>

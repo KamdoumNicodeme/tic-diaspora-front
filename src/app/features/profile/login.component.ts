@@ -18,8 +18,8 @@ export class LoginComponent {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly form = this.fb.nonNullable.group({
-    email: ['president@ticdiaspora.org', [Validators.required, Validators.email]],
-    password: ['President123!', [Validators.required]]
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required]]
   });
 
   submit(): void {
